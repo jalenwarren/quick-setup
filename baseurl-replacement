@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+SOURCE_LIST="/etc/apt/sources.list"
+BACKUP="${SOURCE_LIST}.bak"
+
+# Check for root
+if [[ $EUID -ne 0 ]]; then
+  echo "Please run as root (e.g. sudo $0)"
+  exit 1
+fi
+
+# Prompt for new mirror URL
+read -rp "Enter the new mirror base URL (e.g., http://archive.ubuntu.com/ubuntu): " NEW_URL
+
+# Basic URL validation
+if [[ ! "$NEW_URL" =~ ^http(s)?:// ]]; then
+  echo "Invalid URL. Must start with http:// or https://"
+  exit 1
+fi
+
+# Backup the original sources.list
+cp "$SOURCE_LIST" "$BACKUP"
+echo "Backup saved to $BACKUP"
+
+# Replace the base URL in all deb/deb-src lines
+sed -Ei "s|^(deb(-src)? )https?://[^ ]+|\1${NEW_URL}|" "$SOURCE_LIST"
+
+echo "Updated $SOURCE_LIST with new mirror: $NEW_URL"
